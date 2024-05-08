@@ -39,6 +39,8 @@ const logger = async (req, res, next) => {
 const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token;
   // console.log("value of token in middleware", token);
+
+  //no token available
   if (!token) {
     return res.status(401).send({ message: "not authorized" });
   }
@@ -64,7 +66,7 @@ async function run() {
     const bookingCollection = client.db("cardoctor").collection("bookings");
 
     //auth
-    app.post("/jwt", logger, async (req, res) => {
+    app.post("/jwt", async (req, res) => {
       // console.log("Inside /jwt route handler");
       const user = req.body;
       // console.log(user);
@@ -74,15 +76,22 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: false, //http://localhost:5173/,
-          // sameSite: "none",
+          // secure: false, //http://localhost:5173/,
+          secure: true,
+          sameSite: "none",
           // maxAge: '1h'
         })
         .send({ success: true });
     });
 
+    app.post("/logout", async (req, res) => {
+      const user = req.body;
+      console.log("logout", user);
+      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+    });
+
     //services
-    app.get("/services", logger, async (req, res) => {
+    app.get("/services", async (req, res) => {
       const cursor = serviceCollection.find();
       const result = await cursor.toArray();
       res.send(result);
